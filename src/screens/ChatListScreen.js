@@ -1,90 +1,65 @@
-// src/screens/ChatListScreen.js
+// src/screens/ChatListScreen.js (CÓDIGO FINAL Y CORREGIDO)
 
 import React from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { LogOut, UserPlus, BellRing } from 'lucide-react-native'; // Usamos iconos para RN
-import Avatar from '../components/Avatar'; // Tu componente Avatar migrado
+// 💡 Mantenemos useNavigation si queremos navegar a MODALES (ej. AddFriendScreen)
+import { useNavigation } from '@react-navigation/native'; 
+import { LogOut, UserPlus, BellRing } from 'lucide-react-native'; 
+import Avatar from '../components/Avatar'; 
 
 const ChatListScreen = ({
-  userProfile,
-  amigos,
-  pendingRequests,
-  onLogout,
-  handleAcceptRequest,
-  handleRejectRequest,
+  onlineStatuses, // { id: 'online' | 'offline' }
+  isConnected,    // boolean
+  onSelectChat,   // (chatId, partnerUsername) => void
+  userProfile,    
+  amigos,         
+  pendingRequests,
+  onLogout,
+  handleAcceptRequest,
+  handleRejectRequest,
 }) => {
-  const navigation = useNavigation();
+    // Necesario solo si AddFriendModal y PendingRequestsScreen son modales
+    const navigation = useNavigation();
 
-  // ------------------------------------------------------------------
-  // 1. Manejadores de Interacción
-  // ------------------------------------------------------------------
-  
-  // Reemplaza la lógica de "seleccionar chat" del Sidebar
-  const handleSelectChat = (amigo) => {
-    // 💡 NOTA: La lógica de `handleSelectChatHook` debe ir ahora en ChatDetailScreen 
-    // o un hook compartido. Aquí solo navegamos.
-    
-    // Navegamos a la pantalla de detalle, pasando el objeto amigo/chat
-    navigation.navigate('ChatDetail', { 
-        partnerUsername: amigo.username,
-        chatId: amigo.chat_id,
-        partnerId: amigo.id,
-        isOnline: amigo.isOnline,
-        // ... otras props necesarias
-    });
-  };
+  // ------------------------------------------------------------------
+  // 1. Manejadores de Interacción
+  // ------------------------------------------------------------------
+  
+  // CAMBIO CLAVE 1: Usar el prop onSelectChat para delegar la navegación de la ruta
+  const handleSelectChat = (amigo) => {
+    // Ya no usamos navigation.navigate('ChatDetail', ...).
+    // Llamamos al prop que usa el router de Expo.
+    onSelectChat(amigo.chat_id, amigo.username); 
+  };
 
-  // Reemplaza el modal de "Agregar Amigo"
-  const handleAddFriend = () => {
-    navigation.navigate('AddFriendModal'); // Navega a la pantalla modal
-  };
+  // Reemplaza el modal de "Agregar Amigo"
+  const handleAddFriend = () => {
+    navigation.navigate('AddFriendModal'); // Navega a la pantalla modal
+  };
 
-  // ------------------------------------------------------------------
-  // 2. Componente de Fila para cada Chat
-  // ------------------------------------------------------------------
+  // ------------------------------------------------------------------
+  // 2. Componente de Fila para cada Chat
+  // ------------------------------------------------------------------
 
-  const ChatRow = ({ item }) => (
-    <TouchableOpacity style={styles.chatRow} onPress={() => handleSelectChat(item)}>
-      <Avatar username={item.username} avatarUrl={item.avatar_url} size="md" />
-      <View style={styles.chatInfo}>
-        <Text style={styles.chatUsername} numberOfLines={1}>{item.username}</Text>
-        <Text style={styles.lastMessage} numberOfLines={1}>
-          {item.isOnline ? '🟢 En línea' : '⚫ Desconectado'}
-        </Text>
-      </View>
-    </TouchableOpacity>
-  );
-  
-  // ------------------------------------------------------------------
-  // 3. Solicitudes Pendientes (Reemplazo del Modal)
-  // ------------------------------------------------------------------
+  const ChatRow = ({ item }) => {
+    // CAMBIO CLAVE 2: Obtener el estado de conexión del prop 'onlineStatuses'
+    const isFriendOnline = onlineStatuses && onlineStatuses[item.id] === 'online'; 
 
-  const PendingRequestsSection = () => {
-      if (pendingRequests.length === 0) return null;
+    return (
+      <TouchableOpacity style={styles.chatRow} onPress={() => handleSelectChat(item)}>
+        <Avatar username={item.username} avatarUrl={item.avatar_url} size="md" />
+        <View style={styles.chatInfo}>
+          <Text style={styles.chatUsername} numberOfLines={1}>{item.username}</Text>
+          <Text style={styles.lastMessage} numberOfLines={1}>
+            {/* Usamos la variable corregida */}
+            {isFriendOnline ? '🟢 En línea' : '⚫ Desconectado'}
+          </Text>
+        </View>
+      </TouchableOpacity>
+  );
+};
       
-      const requestsCount = pendingRequests.length;
-
-      // 💡 En lugar de un modal, mostramos un botón que lleva a una nueva pantalla
-      const handleOpenRequests = () => {
-          // Podrías crear una `PendingRequestsScreen` o usar Alert simple por ahora
-          Alert.alert(
-              'Solicitudes Pendientes',
-              `Tienes ${requestsCount} solicitud(es) de amistad.`,
-              // Aquí usarías la navegación para ir a una pantalla de gestión de solicitudes.
-              [{ text: 'Ver', onPress: () => navigation.navigate('PendingRequestsScreen', { requests: pendingRequests }) }]
-          );
-      };
-      
-      return (
-          <TouchableOpacity style={styles.pendingCard} onPress={handleOpenRequests}>
-              <BellRing color="white" size={20} />
-              <Text style={styles.pendingText}>
-                {requestsCount} Solicitud{requestsCount > 1 ? 'es' : ''} pendiente
-              </Text>
-          </TouchableOpacity>
-      );
-  };
+ 
 
   // ------------------------------------------------------------------
   // 4. Renderizado Principal

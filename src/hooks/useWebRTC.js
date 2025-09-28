@@ -22,12 +22,11 @@ const peerConfiguration = {
 };
 
 const useWebRTC = ({
-    socket,
-    userProfile,
+    socket, // <-- Recibido desde WebRTCProvider
+    userProfile, // <-- Recibido desde WebRTCProvider
     amigos,
     setMissedCall,
-    // ... otros props de MainChatInterface
-    onCallStart, // <-- Callback para navegar a CallScreen
+    onCallStart, 
 }) => {
     // ESTADOS
     const [isCalling, setIsCalling] = useState(false); // Soy el que llama
